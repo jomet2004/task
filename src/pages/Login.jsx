@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { auth } from '../lib/firebase';
+import { auth, isDemoMode } from '../lib/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Info } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,10 +11,18 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { loginDemo } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (isDemoMode) {
+      loginDemo(email);
+      navigate('/');
+      return;
+    }
+
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
@@ -32,6 +41,14 @@ const Login = () => {
         <h2 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem', textAlign: 'center' }}>
           {isLogin ? 'Welcome Back' : 'Create Account'}
         </h2>
+        
+        {isDemoMode && (
+          <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid var(--primary-color)', color: 'var(--primary-color)', padding: '0.75rem', borderRadius: '12px', marginBottom: '1.5rem', fontSize: '0.875rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <Info size={18} />
+            <span><strong>Demo Mode:</strong> Any credentials will work.</span>
+          </div>
+        )}
+
         <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '2rem' }}>
           {isLogin ? 'Enter your details to sign in' : 'Join us and start managing tasks'}
         </p>

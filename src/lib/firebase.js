@@ -3,7 +3,6 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "your-app.firebaseapp.com",
@@ -13,7 +12,16 @@ const firebaseConfig = {
   appId: "your-app-id"
 };
 
+// Check if we are in demo mode (no valid API key)
+export const isDemoMode = firebaseConfig.apiKey === "YOUR_API_KEY";
+
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+let app, auth, db;
+
+if (!isDemoMode) {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+}
+
+export { auth, db };

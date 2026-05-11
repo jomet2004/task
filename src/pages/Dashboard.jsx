@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { db } from '../lib/firebase';
+import { db, isDemoMode } from '../lib/firebase';
 import { collection, addDoc, query, where, onSnapshot, updateDoc, deleteDoc, doc, orderBy, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
-import { Plus, Trash2, CheckCircle, Circle, Clock, Filter } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Circle, Clock, Filter, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Dashboard = () => {
@@ -13,6 +13,12 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!user) return;
+
+    if (isDemoMode) {
+      const storedTasks = JSON.parse(localStorage.getItem(`tasks_${user.uid}`) || '[]');
+      setTasks(storedTasks);
+      return;
+    }
 
     const q = query(
       collection(db, 'tasks'),
@@ -28,9 +34,27 @@ const Dashboard = () => {
     return () => unsubscribe();
   }, [user]);
 
+  const saveDemoTasks = (newTasks) => {
+    localStorage.setItem(`tasks_${user.uid}`, JSON.stringify(newTasks));
+    setTasks(newTasks);
+  };
+
   const addTask = async (e) => {
     e.preventDefault();
     if (!newTask.trim()) return;
+
+    if (isDemoMode) {
+      const task = {
+        id: Date.now().toString(),
+        text: newTask,
+        completed: false,
+        userId: user.uid,
+        createdAt: new Date().toISOString()
+      };
+      saveDemoTasks([task, ...tasks]);
+      setNewTask('');
+      return;
+    }
 
     try {
       await addDoc(collection(db, 'tasks'), {
@@ -46,6 +70,12 @@ const Dashboard = () => {
   };
 
   const toggleTask = async (id, completed) => {
+    if (isDemoMode) {
+      const newTasks = tasks.map(t => t.id === id ? { ...t, completed: !completed } : t);
+      saveDemoTasks(newTasks);
+      return;
+    }
+
     try {
       await updateDoc(doc(db, 'tasks', id), { completed: !completed });
     } catch (err) {
@@ -54,6 +84,12 @@ const Dashboard = () => {
   };
 
   const deleteTask = async (id) => {
+    if (isDemoMode) {
+      const newTasks = tasks.filter(t => t.id !== id);
+      saveDemoTasks(newTasks);
+      return;
+    }
+
     try {
       await deleteDoc(doc(db, 'tasks', id));
     } catch (err) {
